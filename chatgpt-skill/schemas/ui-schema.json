@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ui-schema.json",
+  "title": "UI Reverse Prompt Schema",
+  "description": "Specialized extension for UI screenshots, dashboards, landing pages and app screens.",
+  "allOf": [
+    { "$ref": "./visual-schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "ui": {
+          "type": "object",
+          "properties": {
+            "platform": { "type": "string" },
+            "viewport": { "type": "string" },
+            "layout_system": { "type": "string" },
+            "navigation": { "type": "string" },
+            "sections": { "type": "array", "items": { "type": "string" } },
+            "component_inventory": { "type": "array", "items": { "type": "string" } },
+            "spacing_rhythm": { "type": "string" },
+            "border_radius": { "type": "string" },
+            "borders": { "type": "string" },
+            "shadows": { "type": "string" },
+            "typography": {
+              "type": "object",
+              "properties": {
+                "families": { "type": "array", "items": { "type": "string" } },
+                "hierarchy": { "type": "array", "items": { "type": "string" } },
+                "weight_pattern": { "type": "string" }
+              }
+            },
+            "interaction_cues": { "type": "array", "items": { "type": "string" } },
+            "assets": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      },
+      "required": ["ui"]
+    }
+  ]
+}
