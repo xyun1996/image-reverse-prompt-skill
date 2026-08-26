@@ -32,6 +32,42 @@ jobs:
       - name: Check packaged resource copies
         run: python scripts/check_packaged_resources.py
 
+      - name: Build ChatGPT Skill bundle
+        run: |
+          python scripts/build_skill.py
+          git diff --exit-code -- chatgpt-skill
+          python - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          archive_path = Path("dist/image-reverse-prompt-chatgpt-skill.zip")
+          assert archive_path.is_file()
+
+          with ZipFile(archive_path) as archive:
+              names = set(archive.namelist())
+
+          required = {
+              "SKILL.md",
+              "prompts/analyze-image.md",
+              "prompts/verify-image.md",
+              "prompts/refine-schema.md",
+              "adapters/gpt-image.md",
+              "adapters/flux.md",
+              "adapters/midjourney.md",
+              "adapters/sdxl.md",
+              "schemas/visual-schema.json",
+              "schemas/poster-schema.json",
+              "schemas/product-schema.json",
+              "schemas/ui-schema.json",
+          }
+          assert required <= names
+          assert not any(name.startswith("src/") for name in names)
+          assert "pyproject.toml" not in names
+          assert "requirements.txt" not in names
+          assert not any(name.startswith("scripts/") for name in names)
+          print("ChatGPT Skill bundle contents look correct.")
+          PY
+
       - name: Check Python syntax
         run: python -m compileall -q scripts src
 
