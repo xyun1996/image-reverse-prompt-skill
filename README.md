@@ -1,6 +1,6 @@
 # image-reverse-prompt-skill
 
-A model-agnostic Agent Skill and Python CLI for reverse-engineering reference images into structured visual schemas and compiling prompts for GPT Image, FLUX, Midjourney and SDXL.
+A model-agnostic Agent Skill and installable Python CLI for reverse-engineering reference images into structured visual schemas and compiling prompts for GPT Image, FLUX, Midjourney and SDXL.
 
 ## Pipeline
 
@@ -28,6 +28,7 @@ The goal is reproducible visual reconstruction, not recovery of an unknown origi
 
 - Agent Skill workflow in `SKILL.md`
 - Installable `irp` CLI
+- Runtime resources bundled inside the Python package
 - OpenAI vision provider
 - Qwen vision provider through DashScope OpenAI-compatible API
 - General / poster / product / UI schemas
@@ -38,17 +39,24 @@ The goal is reproducible visual reconstruction, not recovery of an unknown origi
 
 ## Install
 
-For development and local use, clone the repository and install it editable so the CLI can read the repository's prompts, adapters and schemas:
+Clone and install normally:
 
 ```bash
 git clone https://github.com/xyun1996/image-reverse-prompt-skill.git
 cd image-reverse-prompt-skill
+python -m pip install .
+```
+
+Editable development installs also work:
+
+```bash
 python -m pip install -e .
 ```
 
-Then:
+After installation, `irp` can be run from any working directory because prompts, adapters and schemas are bundled as package data.
 
 ```bash
+cd /tmp
 irp --help
 ```
 
@@ -143,7 +151,7 @@ irp reverse poster.png \
 
 ## Agent Skill usage
 
-A vision-capable Agent can still use the repository without the CLI by following `SKILL.md` and reading the prompt/schema/adapter files directly.
+A vision-capable Agent can still use the repository without the CLI by following `SKILL.md` and reading the human-readable root `prompts/`, `schemas/` and `adapters/` files.
 
 When local command execution and provider credentials are available, the preferred execution path is:
 
@@ -162,6 +170,27 @@ When command execution or credentials are unavailable, fall back to the pure Ski
 | Product / ecommerce / campaign still | `product` | hero angle, finish, reflections, contact shadow, props |
 | UI / dashboard / landing page | `ui` | layout, components, spacing, typography, radius, borders, shadows |
 
+## Package resources
+
+The root resource directories remain easy to read and edit as part of the Skill:
+
+```text
+prompts/
+schemas/
+adapters/
+```
+
+The CLI uses bundled copies under:
+
+```text
+src/image_reverse_prompt/resources/
+├── prompts/
+├── schemas/
+└── adapters/
+```
+
+Runtime loading uses `importlib.resources`, so installed commands do not depend on the repository root or current working directory. `scripts/check_packaged_resources.py` prevents the root resources and packaged copies from drifting apart.
+
 ## Repository layout
 
 ```text
@@ -176,10 +205,15 @@ image-reverse-prompt-skill/
 │   ├── reverse.py
 │   ├── palette.py
 │   ├── schema_tools.py
-│   └── providers/
-│       ├── base.py
-│       ├── openai_provider.py
-│       └── qwen_provider.py
+│   ├── paths.py
+│   ├── providers/
+│   │   ├── base.py
+│   │   ├── openai_provider.py
+│   │   └── qwen_provider.py
+│   └── resources/
+│       ├── prompts/
+│       ├── schemas/
+│       └── adapters/
 ├── schemas/
 ├── prompts/
 ├── adapters/
@@ -193,11 +227,12 @@ image-reverse-prompt-skill/
 ```bash
 python -m pip install -r requirements-dev.txt
 python scripts/validate_repo.py
+python scripts/check_packaged_resources.py
 python -m compileall -q scripts src
 irp validate examples/portrait.json
 ```
 
-GitHub Actions installs the package, validates schemas/examples, compiles Python files and smoke-tests the CLI on every push to `main` and on pull requests.
+GitHub Actions performs a non-editable `pip install .`, validates schemas/examples, checks packaged resource synchronization, compiles Python files, smoke-tests the CLI and then changes to `/tmp` to verify packaged resources can be loaded outside the repository.
 
 ## Design principles
 
