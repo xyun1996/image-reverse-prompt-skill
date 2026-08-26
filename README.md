@@ -7,11 +7,9 @@ A model-agnostic Agent Skill and installable Python CLI for reverse-engineering 
 ```text
 Reference image
     ↓
-Vision provider (OpenAI / Qwen)
+Vision provider (OpenAI / Qwen) or a vision-capable Agent
     ↓
 visual facts → schema IR
-    ↓
-optional palette extraction
     ↓
 verification pass
     ↓
@@ -27,6 +25,8 @@ The goal is reproducible visual reconstruction, not recovery of an unknown origi
 ## Features
 
 - Agent Skill workflow in `SKILL.md`
+- Dedicated ChatGPT Skill bundle in `chatgpt-skill/`
+- One-command ChatGPT ZIP builder
 - Installable `irp` CLI
 - Runtime resources bundled inside the Python package
 - OpenAI vision provider
@@ -37,7 +37,49 @@ The goal is reproducible visual reconstruction, not recovery of an unknown origi
 - GPT Image / FLUX / Midjourney / SDXL prompt adapters
 - JSON Schema validation and CI
 
-## Install
+## ChatGPT Skill bundle
+
+The repository contains a ChatGPT-focused Skill manifest at `SKILL.chatgpt.md`. It intentionally excludes local CLI/provider instructions and relies on ChatGPT's own image understanding plus the bundled prompts, schemas and adapters.
+
+The committed upload-ready directory is:
+
+```text
+chatgpt-skill/
+├── SKILL.md
+├── schemas/
+│   ├── visual-schema.json
+│   ├── poster-schema.json
+│   ├── product-schema.json
+│   └── ui-schema.json
+├── prompts/
+│   ├── analyze-image.md
+│   ├── verify-image.md
+│   └── refine-schema.md
+└── adapters/
+    ├── gpt-image.md
+    ├── flux.md
+    ├── midjourney.md
+    └── sdxl.md
+```
+
+Rebuild the directory and create a ZIP with:
+
+```bash
+python scripts/build_skill.py
+```
+
+This creates:
+
+```text
+chatgpt-skill/
+dist/image-reverse-prompt-chatgpt-skill.zip
+```
+
+The ZIP intentionally does **not** include the Python package, CLI, provider code, requirements files or GitHub metadata. It is the minimal Skill bundle intended for uploading to a Skill-capable ChatGPT workspace.
+
+`chatgpt-skill/` is committed so the bundle can be reviewed on GitHub. CI rebuilds it and fails if the committed directory drifts from `SKILL.chatgpt.md`, `schemas/`, `prompts/` or `adapters/`.
+
+## CLI install
 
 Clone and install normally:
 
@@ -151,7 +193,7 @@ irp reverse poster.png \
 
 ## Agent Skill usage
 
-A vision-capable Agent can still use the repository without the CLI by following `SKILL.md` and reading the human-readable root `prompts/`, `schemas/` and `adapters/` files.
+A vision-capable Agent can use the repository without the CLI by following `SKILL.md` and reading the human-readable root `prompts/`, `schemas/` and `adapters/` files.
 
 When local command execution and provider credentials are available, the preferred execution path is:
 
@@ -197,6 +239,8 @@ Runtime loading uses `importlib.resources`, so installed commands do not depend 
 image-reverse-prompt-skill/
 ├── .github/workflows/ci.yml
 ├── SKILL.md
+├── SKILL.chatgpt.md
+├── chatgpt-skill/
 ├── pyproject.toml
 ├── src/image_reverse_prompt/
 │   ├── cli.py
@@ -207,17 +251,14 @@ image-reverse-prompt-skill/
 │   ├── schema_tools.py
 │   ├── paths.py
 │   ├── providers/
-│   │   ├── base.py
-│   │   ├── openai_provider.py
-│   │   └── qwen_provider.py
 │   └── resources/
-│       ├── prompts/
-│       ├── schemas/
-│       └── adapters/
 ├── schemas/
 ├── prompts/
 ├── adapters/
 ├── scripts/
+│   ├── build_skill.py
+│   ├── validate_repo.py
+│   └── check_packaged_resources.py
 ├── examples/
 └── LICENSE
 ```
@@ -228,11 +269,12 @@ image-reverse-prompt-skill/
 python -m pip install -r requirements-dev.txt
 python scripts/validate_repo.py
 python scripts/check_packaged_resources.py
+python scripts/build_skill.py
 python -m compileall -q scripts src
 irp validate examples/portrait.json
 ```
 
-GitHub Actions performs a non-editable `pip install .`, validates schemas/examples, checks packaged resource synchronization, compiles Python files, smoke-tests the CLI and then changes to `/tmp` to verify packaged resources can be loaded outside the repository.
+GitHub Actions performs a non-editable `pip install .`, validates schemas/examples, checks packaged resource synchronization, rebuilds and validates the ChatGPT Skill ZIP, compiles Python files, smoke-tests the CLI and then changes to `/tmp` to verify packaged resources can be loaded outside the repository.
 
 ## Design principles
 
