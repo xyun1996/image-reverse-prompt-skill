@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "image-reverse-prompt"
-version = "0.2.0"
+version = "0.3.0"
 description = "Reverse-engineer images into structured visual schemas and model-specific prompts"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -23,6 +23,14 @@ irp = "image_reverse_prompt.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
+include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+image_reverse_prompt = [
+  "resources/prompts/*.md",
+  "resources/adapters/*.md",
+  "resources/schemas/*.json"
+]
