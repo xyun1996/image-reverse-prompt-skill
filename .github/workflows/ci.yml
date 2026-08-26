@@ -23,11 +23,14 @@ jobs:
       - name: Install project and validation dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e .
+          python -m pip install .
           python -m pip install -r requirements-dev.txt
 
       - name: Validate JSON Schemas and examples
         run: python scripts/validate_repo.py
+
+      - name: Check packaged resource copies
+        run: python scripts/check_packaged_resources.py
 
       - name: Check Python syntax
         run: python -m compileall -q scripts src
@@ -36,3 +39,18 @@ jobs:
         run: |
           irp --help
           irp validate examples/portrait.json
+
+      - name: Smoke test installed package outside repository
+        working-directory: /tmp
+        run: |
+          irp --help
+          python - <<'PY'
+          from image_reverse_prompt.paths import adapter_text, prompt_text, schema_text_for_type
+          from image_reverse_prompt.schema_tools import load_schema_for_type
+
+          assert "Analyze Image" in prompt_text("analyze-image.md")
+          assert "FLUX Adapter" in adapter_text("flux.md")
+          assert "Image Reverse Prompt Visual Schema" in schema_text_for_type("general")
+          assert load_schema_for_type("poster")["title"] == "Poster Reverse Prompt Schema"
+          print("Installed package resources are available outside the repository.")
+          PY
