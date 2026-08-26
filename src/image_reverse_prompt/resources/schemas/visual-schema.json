@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Image Reverse Prompt Visual Schema",
+  "type": "object",
+  "properties": {
+    "subject": {
+      "type": "object",
+      "properties": {
+        "count": {"type": ["integer", "null"]},
+        "type": {"type": ["string", "null"]},
+        "appearance": {"type": ["string", "null"]},
+        "clothing": {"type": ["string", "null"]},
+        "pose": {"type": ["string", "null"]},
+        "expression": {"type": ["string", "null"]},
+        "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "importance": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+      },
+      "additionalProperties": true
+    },
+    "scene": {
+      "type": "object",
+      "properties": {
+        "location": {"type": ["string", "null"]},
+        "environment": {"type": ["string", "null"]},
+        "time": {"type": ["string", "null"]},
+        "weather": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "composition": {
+      "type": "object",
+      "properties": {
+        "aspect_ratio": {"type": ["string", "null"]},
+        "shot_type": {"type": ["string", "null"]},
+        "camera_angle": {"type": ["string", "null"]},
+        "subject_position": {"type": ["string", "null"]},
+        "foreground": {"type": ["string", "null"]},
+        "midground": {"type": ["string", "null"]},
+        "background": {"type": ["string", "null"]},
+        "negative_space": {"type": ["string", "null"]},
+        "symmetry": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "camera": {
+      "type": "object",
+      "properties": {
+        "lens_feel": {"type": ["string", "null"]},
+        "perspective": {"type": ["string", "null"]},
+        "depth_of_field": {"type": ["string", "null"]},
+        "focus": {"type": ["string", "null"]},
+        "motion": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "lighting": {
+      "type": "object",
+      "properties": {
+        "key_light": {"type": ["string", "null"]},
+        "direction": {"type": ["string", "null"]},
+        "quality": {"type": ["string", "null"]},
+        "contrast": {"type": ["string", "null"]},
+        "rim_light": {"type": ["string", "null"]},
+        "ambient_light": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "color": {
+      "type": "object",
+      "properties": {
+        "dominant_colors": {"type": "array", "items": {"type": "string"}},
+        "palette": {"type": "array", "items": {"type": "string"}},
+        "temperature": {"type": ["string", "null"]},
+        "saturation": {"type": ["string", "null"]},
+        "contrast": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "materials": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "appearance": {"type": ["string", "null"]},
+          "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+          "importance": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+        },
+        "required": ["name"],
+        "additionalProperties": true
+      }
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "medium": {"type": ["string", "null"]},
+        "visual_style": {"type": ["string", "null"]},
+        "texture": {"type": ["string", "null"]},
+        "rendering": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "post_processing": {
+      "type": "object",
+      "properties": {
+        "grain": {"type": ["string", "null"]},
+        "bloom": {"type": ["string", "null"]},
+        "halation": {"type": ["string", "null"]},
+        "vignette": {"type": ["string", "null"]},
+        "chromatic_aberration": {"type": ["string", "null"]}
+      },
+      "additionalProperties": true
+    },
+    "text": {
+      "type": "object",
+      "properties": {
+        "present": {"type": "boolean"},
+        "content": {"type": "array", "items": {"type": "string"}},
+        "font_style": {"type": ["string", "null"]},
+        "layout": {"type": ["string", "null"]}
+      },
+      "required": ["present"],
+      "additionalProperties": true
+    },
+    "uncertainties": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {"type": "string"},
+          "note": {"type": "string"},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+        },
+        "required": ["field", "note", "confidence"]
+      }
+    }
+  },
+  "required": ["subject", "scene", "composition", "camera", "lighting", "color", "materials", "style", "post_processing", "text"],
+  "additionalProperties": true
+}
