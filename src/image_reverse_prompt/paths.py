@@ -1,27 +1,40 @@
-from pathlib import Path
+from importlib.resources import files
 
 
-def repo_root() -> Path:
-    return Path(__file__).resolve().parents[2]
+_SCHEMA_FILES = {
+    "general": "visual-schema.json",
+    "poster": "poster-schema.json",
+    "product": "product-schema.json",
+    "ui": "ui-schema.json",
+}
 
 
-def prompt_path(name: str) -> Path:
-    return repo_root() / "prompts" / name
+def resource_text(category: str, name: str) -> str:
+    """Read a UTF-8 resource bundled inside the installed Python package."""
+    resource = files("image_reverse_prompt").joinpath("resources", category, name)
+    return resource.read_text(encoding="utf-8")
 
 
-def adapter_path(name: str) -> Path:
-    return repo_root() / "adapters" / name
+def prompt_text(name: str) -> str:
+    return resource_text("prompts", name)
 
 
-def schema_path_for_type(schema_type: str) -> Path:
-    mapping = {
-        "general": "visual-schema.json",
-        "poster": "poster-schema.json",
-        "product": "product-schema.json",
-        "ui": "ui-schema.json",
-    }
+def adapter_text(name: str) -> str:
+    return resource_text("adapters", name)
+
+
+def schema_text_for_type(schema_type: str) -> str:
     try:
-        filename = mapping[schema_type.lower()]
+        filename = _SCHEMA_FILES[schema_type.lower()]
     except KeyError as exc:
-        raise ValueError(f"Unsupported schema type: {schema_type}") from exc
-    return repo_root() / "schemas" / filename
+        supported = ", ".join(sorted(_SCHEMA_FILES))
+        raise ValueError(f"Unsupported schema type: {schema_type}. Supported: {supported}") from exc
+    return resource_text("schemas", filename)
+
+
+def schema_filename_for_type(schema_type: str) -> str:
+    try:
+        return _SCHEMA_FILES[schema_type.lower()]
+    except KeyError as exc:
+        supported = ", ".join(sorted(_SCHEMA_FILES))
+        raise ValueError(f"Unsupported schema type: {schema_type}. Supported: {supported}") from exc
