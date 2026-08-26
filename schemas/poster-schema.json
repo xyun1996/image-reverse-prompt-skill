@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "poster-schema.json",
+  "title": "Poster Reverse Prompt Schema",
+  "description": "Specialized extension for posters, ads, covers and key visuals.",
+  "allOf": [
+    { "$ref": "./visual-schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "poster": {
+          "type": "object",
+          "properties": {
+            "format": { "type": "string" },
+            "visual_hierarchy": { "type": "array", "items": { "type": "string" } },
+            "grid": { "type": "string" },
+            "headline": {
+              "type": "object",
+              "properties": {
+                "content": { "type": "string" },
+                "position": { "type": "string" },
+                "scale": { "type": "string" },
+                "alignment": { "type": "string" },
+                "type_style": { "type": "string" },
+                "color": { "type": "string" }
+              }
+            },
+            "secondary_text": { "type": "array", "items": { "type": "string" } },
+            "cta": { "type": "string" },
+            "logo": { "type": "string" },
+            "graphic_devices": { "type": "array", "items": { "type": "string" } },
+            "negative_space": { "type": "string" },
+            "print_or_screen_effects": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      },
+      "required": ["poster"]
+    }
+  ]
+}
