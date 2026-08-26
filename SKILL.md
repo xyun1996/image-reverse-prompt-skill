@@ -7,10 +7,11 @@ Reverse-engineer a reference image into a structured visual representation, veri
 Do not jump directly from image to prompt. Use this pipeline:
 
 1. Observe visual facts.
-2. Normalize them into `schemas/visual-schema.json`.
-3. Verify the schema against the source image.
-4. Apply only user-requested edits.
-5. Compile the result through a target adapter.
+2. Normalize them into a model-agnostic schema.
+3. Optionally extract dominant colors programmatically.
+4. Verify the schema against the source image.
+5. Apply only user-requested edits.
+6. Compile the result through a target adapter.
 
 The schema is the intermediate representation (IR). It should remain model-agnostic.
 
@@ -19,7 +20,18 @@ Use this skill when the user asks to:
 - reverse engineer / reconstruct / infer a prompt from an image;
 - analyze a reference image for reproduction;
 - preserve composition/style/lighting while changing selected elements;
-- convert one reference image into prompts for GPT Image, FLUX, Midjourney, or SDXL.
+- convert one reference image into prompts for GPT Image, FLUX, Midjourney, or SDXL;
+- reconstruct a poster, product shot, UI screenshot, dashboard, landing page, ad, cover, or key visual.
+
+## Schema routing
+Start from `schemas/visual-schema.json` for general imagery.
+
+If the reference is specialized, use the corresponding extension:
+- poster / ad / cover / key visual → `schemas/poster-schema.json`
+- product photography / ecommerce / campaign still → `schemas/product-schema.json`
+- UI screenshot / dashboard / landing page / app screen → `schemas/ui-schema.json`
+
+Use the specialized fields in addition to the shared visual fields. Do not discard the base schema.
 
 ## Workflow
 
@@ -32,13 +44,29 @@ Rules:
 - Separate facts from uncertain interpretation.
 - Capture subject, scene, composition, camera feel, lighting, color, materials, style, post-processing, text, and spatial relationships.
 - Assign `confidence` and `importance` where useful.
+- For posters, capture hierarchy, typography placement, grid and negative space.
+- For product images, capture hero angle, surface, reflections, edge highlights and contact shadow.
+- For UI, capture viewport, layout system, sections, components, spacing rhythm, borders, radius, shadows and typography hierarchy.
 
 ### Step 2 — Build the visual schema
-Populate an object conforming to `schemas/visual-schema.json`.
+Populate an object conforming to the selected schema.
 
 Keep fields concise and composable. Prefer explicit spatial relations such as `left third`, `centered`, `foreground`, `behind subject`, `soft rim light from camera-right` over vague prose.
 
-### Step 3 — Verify
+### Step 3 — Extract palette when code execution is available
+Use `scripts/extract_palette.py` when an image file is locally accessible.
+
+Example:
+
+```bash
+python scripts/extract_palette.py reference.jpg --colors 6 --json
+```
+
+Treat extracted colors as evidence, not semantic truth. Map them back to roles such as background, skin, product body, accent, text, highlight and shadow after visually checking the image.
+
+If code execution is unavailable, estimate colors visually and lower confidence accordingly.
+
+### Step 4 — Verify
 Read `prompts/verify-image.md` and compare the schema with the source image again.
 
 Correct:
@@ -48,17 +76,21 @@ Correct:
 - wrong light direction or quality;
 - wrong dominant colors;
 - hallucinated text or objects;
-- contradictions between fields.
+- contradictions between fields;
+- wrong layout hierarchy for posters/UI;
+- wrong product geometry, reflections or shadows.
 
-### Step 4 — Apply requested transformations
+### Step 5 — Apply requested transformations
 If the user asks to modify the reference, edit only the necessary schema fields.
 
 Examples:
 - `change woman to man` → edit subject attributes while preserving composition/lighting unless requested otherwise;
 - `make it Tokyo at night` → edit scene/environment/time while preserving unaffected fields;
-- `keep layout exactly` → lock composition fields.
+- `keep layout exactly` → lock composition fields;
+- `replace the product but keep campaign lighting` → edit product identity/form while preserving camera, lighting and background treatment;
+- `keep UI layout, change branding` → preserve layout/component structure and edit color/typography/assets only as requested.
 
-### Step 5 — Select adapter
+### Step 6 — Select adapter
 Use the requested target:
 - GPT Image → `adapters/gpt-image.md`
 - FLUX → `adapters/flux.md`
@@ -67,7 +99,7 @@ Use the requested target:
 
 If no target is specified, output GPT Image, FLUX, and Midjourney versions.
 
-### Step 6 — Output
+### Step 7 — Output
 Default response order:
 1. concise visual breakdown;
 2. dominant palette;
@@ -75,20 +107,24 @@ Default response order:
 4. model-specific prompt(s);
 5. assumptions or low-confidence fields, if any.
 
+For an end-to-end reference, read `examples/full-pipeline.md`.
+
 ## Quality rules
 - Preserve subject count and geometry.
 - Preserve foreground / midground / background relationships.
 - Preserve important light direction, softness, and contrast.
+- Preserve typography hierarchy and spatial layout when they are central to the reference.
 - Put high-importance, high-confidence features early in prompts.
 - Avoid filler quality tags such as `masterpiece`, `best quality`, `8k`, unless the adapter explicitly benefits from them.
 - Do not claim to recover the original hidden prompt. The goal is reproducible visual reconstruction.
 - Prefer concrete visual language over abstract adjectives.
-
-## Optional color extraction
-When code execution is available, dominant colors may be sampled programmatically instead of guessed. Use extracted colors as evidence, then map them to semantic roles such as background, skin, accent, highlight, shadow.
+- Do not infer exact focal length, camera body, seed, sampler, checkpoint or LoRA unless independently supplied.
 
 ## Expected files
 - `schemas/visual-schema.json`
+- `schemas/poster-schema.json`
+- `schemas/product-schema.json`
+- `schemas/ui-schema.json`
 - `prompts/analyze-image.md`
 - `prompts/verify-image.md`
 - `prompts/refine-schema.md`
@@ -96,3 +132,5 @@ When code execution is available, dominant colors may be sampled programmaticall
 - `adapters/flux.md`
 - `adapters/midjourney.md`
 - `adapters/sdxl.md`
+- `scripts/extract_palette.py`
+- `examples/full-pipeline.md`
