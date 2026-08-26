@@ -1,7 +1,7 @@
 # Image Reverse Prompt Skill
 
 ## Purpose
-Reverse-engineer a reference image into a structured visual representation, verify the representation against the image, then compile model-specific prompts for image generation systems.
+Reverse-engineer a reference image into a structured visual representation, verify it against the source, then compile model-specific prompts for image-generation systems.
 
 ## Core principle
 Do not jump directly from image to prompt. Use this pipeline:
@@ -11,9 +11,33 @@ Do not jump directly from image to prompt. Use this pipeline:
 3. Optionally extract dominant colors programmatically.
 4. Verify the schema against the source image.
 5. Apply only user-requested edits.
-6. Compile the result through a target adapter.
+6. Compile through the requested target adapter.
 
-The schema is the intermediate representation (IR). It should remain model-agnostic.
+The schema is the intermediate representation (IR). Do not claim to recover an unknown original hidden prompt.
+
+## Preferred execution path
+
+When local command execution is available and a supported provider is configured, prefer the CLI:
+
+```bash
+irp reverse <image> --provider openai --target flux
+```
+
+Supported providers:
+- `openai` — requires `OPENAI_API_KEY`; model defaults to `IRP_OPENAI_MODEL` or `gpt-4.1-mini`.
+- `qwen` — requires `DASHSCOPE_API_KEY`; model defaults to `IRP_QWEN_MODEL` or `qwen-vl-max` and uses the DashScope OpenAI-compatible endpoint.
+
+Useful commands:
+
+```bash
+irp palette <image> --colors 6 --json
+irp analyze <image> --provider openai --schema-type general
+irp validate <schema.json> --schema-type general
+irp compile <schema.json> --target flux --provider openai
+irp reverse <image> --provider qwen --schema-type poster --target gpt-image
+```
+
+If the CLI, local execution, or provider credentials are unavailable, follow the pure Skill workflow below using the Agent's own vision capability.
 
 ## Trigger
 Use this skill when the user asks to:
@@ -24,113 +48,78 @@ Use this skill when the user asks to:
 - reconstruct a poster, product shot, UI screenshot, dashboard, landing page, ad, cover, or key visual.
 
 ## Schema routing
-Start from `schemas/visual-schema.json` for general imagery.
+Use:
+- general photography / illustration → `schemas/visual-schema.json` (`--schema-type general`)
+- poster / ad / cover / key visual → `schemas/poster-schema.json` (`--schema-type poster`)
+- product photography / ecommerce / campaign still → `schemas/product-schema.json` (`--schema-type product`)
+- UI screenshot / dashboard / landing page / app screen → `schemas/ui-schema.json` (`--schema-type ui`)
 
-If the reference is specialized, use the corresponding extension:
-- poster / ad / cover / key visual → `schemas/poster-schema.json`
-- product photography / ecommerce / campaign still → `schemas/product-schema.json`
-- UI screenshot / dashboard / landing page / app screen → `schemas/ui-schema.json`
+Specialized schemas extend the shared visual representation; do not discard common visual fields.
 
-Use the specialized fields in addition to the shared visual fields. Do not discard the base schema.
-
-## Workflow
+## Pure Skill workflow
 
 ### Step 1 — Analyze observable facts
 Read `prompts/analyze-image.md` and inspect the image.
 
 Rules:
-- Describe what is visually observable.
-- Do not invent camera EXIF, artist names, model names, or hidden generation settings.
+- Describe only visually supportable facts.
+- Do not invent EXIF, artist names, seeds, samplers, checkpoints, LoRAs or hidden generation settings.
 - Separate facts from uncertain interpretation.
-- Capture subject, scene, composition, camera feel, lighting, color, materials, style, post-processing, text, and spatial relationships.
+- Capture subject, scene, composition, camera feel, lighting, color, materials, style, post-processing, text and spatial relationships.
 - Assign `confidence` and `importance` where useful.
 - For posters, capture hierarchy, typography placement, grid and negative space.
 - For product images, capture hero angle, surface, reflections, edge highlights and contact shadow.
 - For UI, capture viewport, layout system, sections, components, spacing rhythm, borders, radius, shadows and typography hierarchy.
 
 ### Step 2 — Build the visual schema
-Populate an object conforming to the selected schema.
-
-Keep fields concise and composable. Prefer explicit spatial relations such as `left third`, `centered`, `foreground`, `behind subject`, `soft rim light from camera-right` over vague prose.
+Populate an object conforming to the selected schema. Prefer explicit spatial language such as `left third`, `foreground`, `behind subject`, `soft side light from camera-right`.
 
 ### Step 3 — Extract palette when code execution is available
-Use `scripts/extract_palette.py` when an image file is locally accessible.
 
-Example:
+```bash
+irp palette reference.jpg --colors 6 --json
+```
+
+or, without the installed CLI:
 
 ```bash
 python scripts/extract_palette.py reference.jpg --colors 6 --json
 ```
 
-Treat extracted colors as evidence, not semantic truth. Map them back to roles such as background, skin, product body, accent, text, highlight and shadow after visually checking the image.
-
-If code execution is unavailable, estimate colors visually and lower confidence accordingly.
+Treat sampled colors as evidence and map them to semantic roles after visually checking the image.
 
 ### Step 4 — Verify
-Read `prompts/verify-image.md` and compare the schema with the source image again.
+Read `prompts/verify-image.md` and compare the schema against the source image again.
 
-Correct:
-- missing major objects;
-- wrong object counts;
-- wrong poses or spatial relationships;
-- wrong light direction or quality;
-- wrong dominant colors;
-- hallucinated text or objects;
-- contradictions between fields;
-- wrong layout hierarchy for posters/UI;
-- wrong product geometry, reflections or shadows.
+Correct missing major objects, object counts, poses, spatial relationships, light direction, palette, text, poster/UI hierarchy, product geometry, reflections and shadows. Remove hallucinated content.
 
 ### Step 5 — Apply requested transformations
-If the user asks to modify the reference, edit only the necessary schema fields.
-
-Examples:
-- `change woman to man` → edit subject attributes while preserving composition/lighting unless requested otherwise;
-- `make it Tokyo at night` → edit scene/environment/time while preserving unaffected fields;
-- `keep layout exactly` → lock composition fields;
-- `replace the product but keep campaign lighting` → edit product identity/form while preserving camera, lighting and background treatment;
-- `keep UI layout, change branding` → preserve layout/component structure and edit color/typography/assets only as requested.
+Edit only the fields required by the user's request. Preserve unaffected composition, lighting, color relationships and spatial structure.
 
 ### Step 6 — Select adapter
-Use the requested target:
 - GPT Image → `adapters/gpt-image.md`
 - FLUX → `adapters/flux.md`
 - Midjourney → `adapters/midjourney.md`
 - SDXL → `adapters/sdxl.md`
 
-If no target is specified, output GPT Image, FLUX, and Midjourney versions.
+If no target is specified, output GPT Image, FLUX and Midjourney versions.
 
 ### Step 7 — Output
-Default response order:
+Default order:
 1. concise visual breakdown;
 2. dominant palette;
 3. structured schema;
 4. model-specific prompt(s);
-5. assumptions or low-confidence fields, if any.
+5. assumptions / low-confidence fields.
 
-For an end-to-end reference, read `examples/full-pipeline.md`.
+For a worked example, read `examples/full-pipeline.md`.
 
 ## Quality rules
 - Preserve subject count and geometry.
 - Preserve foreground / midground / background relationships.
-- Preserve important light direction, softness, and contrast.
-- Preserve typography hierarchy and spatial layout when they are central to the reference.
+- Preserve important light direction, softness and contrast.
+- Preserve typography hierarchy and spatial layout when central to the reference.
 - Put high-importance, high-confidence features early in prompts.
-- Avoid filler quality tags such as `masterpiece`, `best quality`, `8k`, unless the adapter explicitly benefits from them.
-- Do not claim to recover the original hidden prompt. The goal is reproducible visual reconstruction.
+- Avoid filler tags such as `masterpiece`, `best quality`, `8k` unless a target adapter genuinely benefits from them.
 - Prefer concrete visual language over abstract adjectives.
-- Do not infer exact focal length, camera body, seed, sampler, checkpoint or LoRA unless independently supplied.
-
-## Expected files
-- `schemas/visual-schema.json`
-- `schemas/poster-schema.json`
-- `schemas/product-schema.json`
-- `schemas/ui-schema.json`
-- `prompts/analyze-image.md`
-- `prompts/verify-image.md`
-- `prompts/refine-schema.md`
-- `adapters/gpt-image.md`
-- `adapters/flux.md`
-- `adapters/midjourney.md`
-- `adapters/sdxl.md`
-- `scripts/extract_palette.py`
-- `examples/full-pipeline.md`
+- Never imply exact recovery of focal length, camera body, seed, sampler, checkpoint, LoRA or original hidden prompt unless independently supplied.
