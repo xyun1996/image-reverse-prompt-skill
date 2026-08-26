@@ -1,0 +1,75 @@
+{
+  "subject": {
+    "count": 1,
+    "type": "adult person",
+    "appearance": "dark shoulder-length hair, three-quarter view",
+    "clothing": "dark coat",
+    "pose": "standing beside a rain-covered window, head slightly turned toward camera",
+    "expression": "calm, introspective",
+    "confidence": 0.96,
+    "importance": 1.0
+  },
+  "scene": {
+    "location": "interior beside a large window",
+    "environment": "rain visible on glass, blurred city lights outside",
+    "time": "night",
+    "weather": "rain"
+  },
+  "composition": {
+    "aspect_ratio": "3:4",
+    "shot_type": "close portrait",
+    "camera_angle": "eye level",
+    "subject_position": "left-center third",
+    "foreground": "soft out-of-focus window reflections",
+    "midground": "subject",
+    "background": "blurred night city lights through wet glass",
+    "negative_space": "camera-right",
+    "symmetry": "asymmetric"
+  },
+  "camera": {
+    "lens_feel": "portrait compression without exaggerated perspective",
+    "perspective": "natural",
+    "depth_of_field": "shallow",
+    "focus": "eyes and face",
+    "motion": "none visible"
+  },
+  "lighting": {
+    "key_light": "soft window-side illumination",
+    "direction": "camera-left side light",
+    "quality": "soft",
+    "contrast": "medium-low",
+    "rim_light": "subtle cool edge from city lights",
+    "ambient_light": "dim cool interior fill"
+  },
+  "color": {
+    "dominant_colors": ["charcoal", "desaturated teal", "warm amber highlights"],
+    "palette": ["#1D2028", "#3D4A59", "#967665", "#C7A18C"],
+    "temperature": "cool overall with warm practical highlights",
+    "saturation": "muted",
+    "contrast": "moderate"
+  },
+  "materials": [
+    {"name": "wet glass", "appearance": "specular droplets and streaks", "confidence": 0.99, "importance": 0.85},
+    {"name": "dark fabric", "appearance": "soft matte coat texture", "confidence": 0.9, "importance": 0.45}
+  ],
+  "style": {
+    "medium": "cinematic photography",
+    "visual_style": "quiet contemporary portrait",
+    "texture": "subtle organic texture",
+    "rendering": "photorealistic"
+  },
+  "post_processing": {
+    "grain": "subtle",
+    "bloom": "slight around city lights",
+    "halation": "minimal",
+    "vignette": "very subtle",
+    "chromatic_aberration": "none apparent"
+  },
+  "text": {
+    "present": false,
+    "content": [],
+    "font_style": null,
+    "layout": null
+  },
+  "uncertainties": []
+}
