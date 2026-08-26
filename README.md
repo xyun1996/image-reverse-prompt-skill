@@ -39,12 +39,15 @@ The goal is not to claim recovery of the original hidden prompt. The goal is rep
 - Programmatic dominant-color extraction helper
 - GPT Image, FLUX, Midjourney and SDXL adapters
 - End-to-end worked example
+- JSON Schema + example validation in CI
+- Python syntax checks on every push / pull request
 - Model-agnostic: use any sufficiently capable vision model or vision-enabled Agent
 
 ## Repository layout
 
 ```text
 image-reverse-prompt-skill/
+├── .github/workflows/ci.yml
 ├── SKILL.md
 ├── schemas/
 │   ├── visual-schema.json
@@ -61,11 +64,13 @@ image-reverse-prompt-skill/
 │   ├── midjourney.md
 │   └── sdxl.md
 ├── scripts/
-│   └── extract_palette.py
+│   ├── extract_palette.py
+│   └── validate_repo.py
 ├── examples/
 │   ├── portrait.json
 │   └── full-pipeline.md
 ├── requirements.txt
+├── requirements-dev.txt
 └── LICENSE
 ```
 
@@ -91,10 +96,6 @@ Reconstruct this dashboard screenshot. Keep layout and component hierarchy but c
 
 ## Schema routing
 
-Use `schemas/visual-schema.json` for general images.
-
-Use an extension when the visual problem is domain-specific:
-
 | Reference type | Schema | Extra focus |
 | --- | --- | --- |
 | General photography / illustration | `visual-schema.json` | subject, composition, lighting, color, style |
@@ -116,25 +117,10 @@ Map observations into the selected schema. Treat the schema as an intermediate r
 
 ### 3. Extract palette (optional)
 
-When the reference image is locally accessible, install dependencies:
-
 ```bash
 python -m pip install -r requirements.txt
-```
-
-Extract dominant colors:
-
-```bash
-python scripts/extract_palette.py reference.jpg --colors 6
-```
-
-Or machine-readable JSON:
-
-```bash
 python scripts/extract_palette.py reference.jpg --colors 6 --json
 ```
-
-The script uses K-Means to return dominant RGB/HEX values and pixel share. These values should then be semantically mapped to roles such as background, skin, product body, accent, highlight, shadow or UI surface.
 
 ### 4. Verify
 
@@ -147,6 +133,24 @@ Apply user-requested changes only to affected schema fields. Unmodified fields r
 ### 6. Compile
 
 Choose an adapter from `adapters/` and compile the verified schema into the target model's preferred prompt style.
+
+## Validation and CI
+
+Install validation dependencies and run the same checks used by GitHub Actions:
+
+```bash
+python -m pip install -r requirements-dev.txt
+python scripts/validate_repo.py
+python -m py_compile scripts/*.py
+```
+
+`validate_repo.py` checks that:
+
+- every JSON file under `schemas/` is a valid Draft 2020-12 JSON Schema;
+- every JSON example under `examples/` parses correctly;
+- JSON examples conform to `schemas/visual-schema.json`.
+
+GitHub Actions runs these checks automatically on pushes to `main` and on pull requests.
 
 ## Worked example
 
@@ -166,8 +170,6 @@ FLUX prompt
 Midjourney prompt
 ```
 
-The key idea is that all target prompts are compiled from the same verified visual IR.
-
 ## Design principles
 
 1. **Observation before generation** — visual facts come first.
@@ -179,26 +181,6 @@ The key idea is that all target prompts are compiled from the same verified visu
 7. **Importance over verbosity** — high-impact visual features should dominate the final prompt.
 8. **Specialize only where useful** — domain schemas add poster/product/UI semantics while preserving the shared IR.
 
-## Example schema
-
-See `examples/portrait.json` for a structured example. Important common groups include:
-
-```json
-{
-  "subject": {},
-  "scene": {},
-  "composition": {},
-  "camera": {},
-  "lighting": {},
-  "color": {},
-  "materials": [],
-  "style": {},
-  "post_processing": {},
-  "text": {},
-  "uncertainties": []
-}
-```
-
 ## Vision backends
 
 This Skill intentionally does not depend on one VLM. Possible backends include:
@@ -208,14 +190,11 @@ This Skill intentionally does not depend on one VLM. Possible backends include:
 - JoyCaption;
 - other local or hosted VLMs capable of structured visual analysis.
 
-A provider-specific integration can be added later without changing the schema or adapters.
-
 ## Roadmap
 
 - optional OCR-aware typography analysis
 - reference-image similarity evaluation loop
 - ComfyUI integration
-- automated JSON Schema validation
 - optional provider adapters for local VLM execution
 
 ## License
