@@ -17,11 +17,13 @@ The schema is the intermediate representation (IR). Do not claim to recover an u
 
 ## Preferred execution path
 
-When local command execution is available and a supported provider is configured, prefer the CLI:
+When local command execution is available and a supported provider is configured, prefer the installed CLI:
 
 ```bash
 irp reverse <image> --provider openai --target flux
 ```
+
+The CLI bundles its prompts, schemas and adapters as Python package data and can run from any working directory after `pip install .`.
 
 Supported providers:
 - `openai` — requires `OPENAI_API_KEY`; model defaults to `IRP_OPENAI_MODEL` or `gpt-4.1-mini`.
