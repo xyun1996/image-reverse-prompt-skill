@@ -1,47 +1,166 @@
 # image-reverse-prompt-skill
 
-A model-agnostic Agent Skill for reverse-engineering a reference image into a structured visual schema, verifying it against the source image, and compiling production-ready prompts for multiple image-generation models.
+A model-agnostic Agent Skill and Python CLI for reverse-engineering reference images into structured visual schemas and compiling prompts for GPT Image, FLUX, Midjourney and SDXL.
 
-## Why this exists
-
-Direct `image → prompt` generation tends to mix observation, guessing and model-specific prompt habits. This project separates the process into stages:
+## Pipeline
 
 ```text
 Reference image
     ↓
-Visual fact analysis
+Vision provider (OpenAI / Qwen)
     ↓
-Base or specialized schema (model-agnostic IR)
+visual facts → schema IR
     ↓
-optional programmatic palette extraction
+optional palette extraction
     ↓
 verification pass
     ↓
-optional user edits
+optional edits
     ↓
 model adapter
-    ├── GPT Image
-    ├── FLUX
-    ├── Midjourney
-    └── SDXL
+    ↓
+final prompt
 ```
 
-The goal is not to claim recovery of the original hidden prompt. The goal is reproducible visual reconstruction.
+The goal is reproducible visual reconstruction, not recovery of an unknown original hidden prompt.
 
 ## Features
 
-- Image → structured visual schema
-- Explicit subject / scene / composition / camera / lighting / color / materials / style analysis
-- Confidence and importance signals
-- Second-pass visual verification to reduce hallucinations
-- Selective edits while preserving locked reference properties
-- Specialized poster / product photography / UI schemas
-- Programmatic dominant-color extraction helper
-- GPT Image, FLUX, Midjourney and SDXL adapters
-- End-to-end worked example
-- JSON Schema + example validation in CI
-- Python syntax checks on every push / pull request
-- Model-agnostic: use any sufficiently capable vision model or vision-enabled Agent
+- Agent Skill workflow in `SKILL.md`
+- Installable `irp` CLI
+- OpenAI vision provider
+- Qwen vision provider through DashScope OpenAI-compatible API
+- General / poster / product / UI schemas
+- Second-pass image verification
+- Programmatic dominant-color extraction
+- GPT Image / FLUX / Midjourney / SDXL prompt adapters
+- JSON Schema validation and CI
+
+## Install
+
+For development and local use, clone the repository and install it editable so the CLI can read the repository's prompts, adapters and schemas:
+
+```bash
+git clone https://github.com/xyun1996/image-reverse-prompt-skill.git
+cd image-reverse-prompt-skill
+python -m pip install -e .
+```
+
+Then:
+
+```bash
+irp --help
+```
+
+## Provider configuration
+
+### OpenAI
+
+```bash
+export OPENAI_API_KEY=...
+export IRP_OPENAI_MODEL=gpt-4.1-mini
+```
+
+Optional compatible endpoint:
+
+```bash
+export IRP_OPENAI_BASE_URL=https://your-endpoint/v1
+```
+
+### Qwen / DashScope
+
+```bash
+export DASHSCOPE_API_KEY=...
+export IRP_QWEN_MODEL=qwen-vl-max
+export IRP_QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+```
+
+## CLI
+
+### Extract palette
+
+```bash
+irp palette reference.jpg --colors 6
+irp palette reference.jpg --colors 6 --json
+```
+
+### Validate schema
+
+```bash
+irp validate examples/portrait.json
+irp validate poster.json --schema-type poster
+```
+
+### Analyze image into a schema
+
+```bash
+irp analyze reference.jpg --provider openai --schema-type general
+```
+
+```bash
+irp analyze poster.png \
+  --provider qwen \
+  --schema-type poster \
+  --output poster-schema-output.json
+```
+
+By default `analyze` performs a second visual verification pass. Skip it only when needed:
+
+```bash
+irp analyze reference.jpg --provider openai --no-verify
+```
+
+### Compile an existing schema
+
+```bash
+irp compile examples/portrait.json --target flux --provider openai
+```
+
+Supported targets:
+
+```text
+gpt-image
+flux
+midjourney
+sdxl
+```
+
+### Full image → prompt pipeline
+
+```bash
+irp reverse reference.jpg --provider openai --target flux
+```
+
+```bash
+irp reverse poster.png \
+  --provider qwen \
+  --schema-type poster \
+  --target gpt-image \
+  --output result.json
+```
+
+`reverse` returns a JSON object containing the extracted palette, verified schema and final compiled prompt.
+
+## Agent Skill usage
+
+A vision-capable Agent can still use the repository without the CLI by following `SKILL.md` and reading the prompt/schema/adapter files directly.
+
+When local command execution and provider credentials are available, the preferred execution path is:
+
+```text
+irp reverse <image> --provider <provider> --target <target>
+```
+
+When command execution or credentials are unavailable, fall back to the pure Skill workflow.
+
+## Schema routing
+
+| Reference type | Schema type | Extra focus |
+| --- | --- | --- |
+| General photography / illustration | `general` | subject, composition, lighting, color, style |
+| Poster / ad / cover / key visual | `poster` | hierarchy, typography, grid, CTA, negative space |
+| Product / ecommerce / campaign still | `product` | hero angle, finish, reflections, contact shadow, props |
+| UI / dashboard / landing page | `ui` | layout, components, spacing, typography, radius, borders, shadows |
 
 ## Repository layout
 
@@ -49,153 +168,46 @@ The goal is not to claim recovery of the original hidden prompt. The goal is rep
 image-reverse-prompt-skill/
 ├── .github/workflows/ci.yml
 ├── SKILL.md
+├── pyproject.toml
+├── src/image_reverse_prompt/
+│   ├── cli.py
+│   ├── analyzer.py
+│   ├── compiler.py
+│   ├── reverse.py
+│   ├── palette.py
+│   ├── schema_tools.py
+│   └── providers/
+│       ├── base.py
+│       ├── openai_provider.py
+│       └── qwen_provider.py
 ├── schemas/
-│   ├── visual-schema.json
-│   ├── poster-schema.json
-│   ├── product-schema.json
-│   └── ui-schema.json
 ├── prompts/
-│   ├── analyze-image.md
-│   ├── verify-image.md
-│   └── refine-schema.md
 ├── adapters/
-│   ├── gpt-image.md
-│   ├── flux.md
-│   ├── midjourney.md
-│   └── sdxl.md
 ├── scripts/
-│   ├── extract_palette.py
-│   └── validate_repo.py
 ├── examples/
-│   ├── portrait.json
-│   └── full-pipeline.md
-├── requirements.txt
-├── requirements-dev.txt
 └── LICENSE
 ```
 
-## Quick start
-
-Give a vision-capable Agent a reference image and ask it to use this skill.
-
-```text
-Reverse engineer this image and give me GPT Image, FLUX and Midjourney prompts.
-```
-
-```text
-Analyze this reference image. Keep composition and lighting, change the subject to a man, and compile a FLUX prompt.
-```
-
-```text
-Reverse engineer this poster. Preserve typography hierarchy and layout, but replace the product with a black mechanical keyboard.
-```
-
-```text
-Reconstruct this dashboard screenshot. Keep layout and component hierarchy but change the brand palette to monochrome.
-```
-
-## Schema routing
-
-| Reference type | Schema | Extra focus |
-| --- | --- | --- |
-| General photography / illustration | `visual-schema.json` | subject, composition, lighting, color, style |
-| Poster / ad / cover / key visual | `poster-schema.json` | hierarchy, typography, grid, CTA, negative space |
-| Product / ecommerce / campaign still | `product-schema.json` | hero angle, finish, reflections, contact shadow, props |
-| UI / dashboard / landing page | `ui-schema.json` | layout, components, spacing, typography, radius, borders, shadows |
-
-The specialized schemas extend the common visual representation instead of replacing it.
-
-## Workflow
-
-### 1. Observe
-
-Use `prompts/analyze-image.md` to extract visual facts only. Do not guess hidden generation settings, EXIF values, seeds, samplers, LoRAs, checkpoints or artist names.
-
-### 2. Normalize
-
-Map observations into the selected schema. Treat the schema as an intermediate representation (IR) between vision analysis and model-specific prompt generation.
-
-### 3. Extract palette (optional)
-
-```bash
-python -m pip install -r requirements.txt
-python scripts/extract_palette.py reference.jpg --colors 6 --json
-```
-
-### 4. Verify
-
-Use `prompts/verify-image.md` for a second inspection of the original image. Remove hallucinations and correct object count, geometry, light direction, palette, text and spatial relationships.
-
-### 5. Transform
-
-Apply user-requested changes only to affected schema fields. Unmodified fields remain reference-locked.
-
-### 6. Compile
-
-Choose an adapter from `adapters/` and compile the verified schema into the target model's preferred prompt style.
-
 ## Validation and CI
-
-Install validation dependencies and run the same checks used by GitHub Actions:
 
 ```bash
 python -m pip install -r requirements-dev.txt
 python scripts/validate_repo.py
-python -m py_compile scripts/*.py
+python -m compileall -q scripts src
+irp validate examples/portrait.json
 ```
 
-`validate_repo.py` checks that:
-
-- every JSON file under `schemas/` is a valid Draft 2020-12 JSON Schema;
-- every JSON example under `examples/` parses correctly;
-- JSON examples conform to `schemas/visual-schema.json`.
-
-GitHub Actions runs these checks automatically on pushes to `main` and on pull requests.
-
-## Worked example
-
-See [`examples/full-pipeline.md`](examples/full-pipeline.md).
-
-It demonstrates:
-
-```text
-reference observations
-  ↓
-extracted palette
-  ↓
-verified visual schema
-  ↓
-GPT Image prompt
-FLUX prompt
-Midjourney prompt
-```
+GitHub Actions installs the package, validates schemas/examples, compiles Python files and smoke-tests the CLI on every push to `main` and on pull requests.
 
 ## Design principles
 
-1. **Observation before generation** — visual facts come first.
-2. **Schema as IR** — the analysis is independent of the image-generation backend.
-3. **Verify before compiling** — the second visual pass catches hallucinations.
-4. **Selective mutation** — user edits should not accidentally destroy composition or lighting.
-5. **Concrete language** — prefer spatial, lighting, material and palette descriptions over vague style adjectives.
-6. **No fake precision** — do not invent focal lengths, camera bodies, hidden seeds or original prompts.
-7. **Importance over verbosity** — high-impact visual features should dominate the final prompt.
-8. **Specialize only where useful** — domain schemas add poster/product/UI semantics while preserving the shared IR.
-
-## Vision backends
-
-This Skill intentionally does not depend on one VLM. Possible backends include:
-
-- an Agent with built-in image understanding;
-- Qwen-VL family models;
-- JoyCaption;
-- other local or hosted VLMs capable of structured visual analysis.
-
-## Roadmap
-
-- optional OCR-aware typography analysis
-- reference-image similarity evaluation loop
-- ComfyUI integration
-- optional provider adapters for local VLM execution
+1. Observation before generation.
+2. Schema as a model-agnostic intermediate representation.
+3. Verify against the reference before compiling.
+4. Apply only requested mutations.
+5. Prefer concrete spatial/light/material/color language.
+6. Do not invent EXIF, seeds, checkpoints, samplers or the original hidden prompt.
+7. Keep high-importance, high-confidence features dominant.
 
 ## License
 
