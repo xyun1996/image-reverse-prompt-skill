@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "product-schema.json",
+  "title": "Product Photography Reverse Prompt Schema",
+  "description": "Specialized extension for product photography, ecommerce images and campaign stills.",
+  "allOf": [
+    { "$ref": "./visual-schema.json" },
+    {
+      "type": "object",
+      "properties": {
+        "product": {
+          "type": "object",
+          "properties": {
+            "category": { "type": "string" },
+            "form_factor": { "type": "string" },
+            "orientation": { "type": "string" },
+            "surface_finish": { "type": "array", "items": { "type": "string" } },
+            "branding_visibility": { "type": "string" },
+            "hero_angle": { "type": "string" },
+            "support_or_surface": { "type": "string" },
+            "contact_shadow": { "type": "string" },
+            "reflections": { "type": "string" },
+            "edge_highlights": { "type": "string" },
+            "background_treatment": { "type": "string" },
+            "props": { "type": "array", "items": { "type": "string" } },
+            "commercial_intent": { "type": "string" }
+          }
+        }
+      },
+      "required": ["product"]
+    }
+  ]
+}
