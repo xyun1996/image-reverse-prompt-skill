@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build a ChatGPT-uploadable Skill directory and ZIP archive.
 
-The repository root files are the canonical Skill sources. This script copies only
-ChatGPT-relevant files into ``chatgpt-skill/`` and creates
-``dist/image-reverse-prompt-chatgpt-skill.zip``.
+The repository root Skill resources remain the canonical shared source. ChatGPT uses
+``SKILL.chatgpt.md`` as its dedicated manifest, while schemas/prompts/adapters are
+synced from the root directories into ``chatgpt-skill/``.
 """
 
 from __future__ import annotations
@@ -14,15 +14,14 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+CHATGPT_MANIFEST = ROOT / "SKILL.chatgpt.md"
 DEFAULT_OUTPUT = ROOT / "chatgpt-skill"
 DEFAULT_ZIP = ROOT / "dist" / "image-reverse-prompt-chatgpt-skill.zip"
 
-INCLUDE = {
-    "SKILL.md": None,
+RESOURCE_DIRS = {
     "schemas": ("*.json",),
     "prompts": ("*.md",),
     "adapters": ("*.md",),
-    "examples": ("*.json", "*.md"),
 }
 
 
@@ -39,10 +38,8 @@ def build(output_dir: Path = DEFAULT_OUTPUT, zip_path: Path = DEFAULT_ZIP) -> tu
         shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    shutil.copy2(ROOT / "SKILL.md", output_dir / "SKILL.md")
-    for directory, patterns in INCLUDE.items():
-        if patterns is None:
-            continue
+    shutil.copy2(CHATGPT_MANIFEST, output_dir / "SKILL.md")
+    for directory, patterns in RESOURCE_DIRS.items():
         _copy_selected(ROOT / directory, output_dir / directory, patterns)
 
     zip_path.parent.mkdir(parents=True, exist_ok=True)
