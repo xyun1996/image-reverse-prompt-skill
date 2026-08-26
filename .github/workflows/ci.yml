@@ -20,11 +20,19 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install validation dependencies
-        run: python -m pip install --upgrade pip && python -m pip install -r requirements-dev.txt
+      - name: Install project and validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install -r requirements-dev.txt
 
       - name: Validate JSON Schemas and examples
         run: python scripts/validate_repo.py
 
       - name: Check Python syntax
-        run: python -m py_compile scripts/*.py
+        run: python -m compileall -q scripts src
+
+      - name: Smoke test CLI
+        run: |
+          irp --help
+          irp validate examples/portrait.json
