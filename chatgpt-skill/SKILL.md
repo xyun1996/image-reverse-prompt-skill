@@ -1,3 +1,8 @@
+---
+name: image-reverse-prompt
+description: Reverse-engineer reference images into structured visual schemas and model-specific prompts for reproducible image generation.
+---
+
 # Image Reverse Prompt Skill
 
 ## Purpose
