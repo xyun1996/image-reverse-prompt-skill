@@ -48,7 +48,7 @@ def _validate_front_matter(path: Path) -> None:
         if ":" not in stripped:
             raise ValueError(f"{path.name}: malformed YAML metadata line: {line!r}")
         key, value = stripped.split(":", 1)
-        metadata[key.strip()] = value.strip().strip('"\'')
+        metadata[key.strip()] = value.strip().strip("\"'")
 
     missing = [key for key in REQUIRED_FRONT_MATTER if not metadata.get(key)]
     if missing:
